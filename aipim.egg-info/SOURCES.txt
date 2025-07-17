@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+aipim/__init__.py
+aipim/aux_functions.py
+aipim/decorators.py
+aipim.egg-info/PKG-INFO
+aipim.egg-info/SOURCES.txt
+aipim.egg-info/dependency_links.txt
+aipim.egg-info/top_level.txt

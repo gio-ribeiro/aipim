@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: aipim
+Version: 0.1.0
+Summary: Registro automático e organizado de execuções, parâmetros e resultados de simulações.
+Author: Seu Nome
+Author-email: "Giovanni G. Ribeiro" <giovannigrttrb@email.com>
+License: MIT
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+
+# aipim
+
+> _"Anota isso aí pra mim"_ — um pacote leve para registrar simulações, parâmetros e resultados automaticamente.
+
+## Instalação
+
+```bash
+pip install -e .
+```
+
