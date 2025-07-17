@@ -1,37 +1,55 @@
 from __future__ import annotations
+from dataclasses import is_dataclass, asdict
 import json
 import numbers
 from pathlib import Path
 import logging
 
-def check_path(path: Path):
+def check_path(path: Path) -> None:
     if not isinstance(path, Path):
         raise TypeError("Expected a Path object as base_dir.") 
     
     if not path.is_dir():
         raise FileNotFoundError(f"Path {path} does not exist.")
     
-    return
-    
-def save_numeric_locals(locals_dict: dict, run_dir: Path) -> None:
+    return None
+
+def save_numeric_metadata(locals_dict: dict, path: Path) -> None:
     """
-    Saves all numeric variables from a locals() dictionary to a JSON file.
+    Saves numeric variables and numeric dataclass fields (including nested dataclasses) to a JSON file.
 
     Args:
-        locals_dict (dict): Dictionary returned by the `locals()` function.
-        path (Path): Path to the output JSON file.
+        locals_dict (dict): Dictionary from `locals()`.
+        path (Path): Output JSON file path.
     """
-    numeric_vars = {
-        k: v for k, v in locals_dict.items()
-        if isinstance(v, numbers.Number)
-    }
+    def extract_numeric(obj):
+        if isinstance(obj, numbers.Number):
+            return obj
+        elif isinstance(obj, dict):
+            return {
+                k: extract_numeric(v)
+                for k, v in obj.items()
+                if isinstance(v, (numbers.Number, dict)) or is_dataclass(v)
+            }
+        elif is_dataclass(obj):
+            return extract_numeric(asdict(obj))
+        else:
+            return None  # Ignore other types
 
-    
-    run_dir.mkdir(parents=True, exist_ok=True)
-    metadata_path = run_dir / 'metadata.json'
-    metadata_path.write_text(json.dumps(numeric_vars, indent=2, ensure_ascii=False))
+    result = {}
 
-def get_logger(name: str = "aipim", file: str | Path ="aipim.log"):
+    for name, val in locals_dict.items():
+        if isinstance(val, numbers.Number):
+            result[name] = val
+        elif is_dataclass(val):
+            extracted = extract_numeric(val)
+            if extracted:  # Ignore empty/None
+                result[name] = extracted
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+
+def get_logger(name: str = "aipim", file: str | Path ="aipim.log") -> logging.Logger:
     if isinstance(file, Path):
         file = str(file.resolve())
     logger = logging.getLogger(name)

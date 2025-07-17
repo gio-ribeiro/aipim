@@ -7,7 +7,7 @@ import json
 import numbers
 import inspect
 
-from .aux_functions import check_path, format_size, get_dir_size, get_logger, format_execution_time, save_numeric_locals
+from .aux_functions import check_path, format_size, get_dir_size, get_logger, format_execution_time, save_numeric_metadata
 
 
 def manage_logging(study_dir: Path, log: Logger):
@@ -71,7 +71,7 @@ def study(base_dir: Path = Path()):
             
             func_locals = func_with_logging(*bound_args.args, **bound_args.kwargs)
             
-            save_numeric_locals(func_locals, run_dir)
+            save_numeric_metadata(func_locals, run_dir / "metadata.json")
             
             return func_locals
         return wrapper
