@@ -66,6 +66,8 @@ def study(base_dir: Path = Path()):
                 bound_args.arguments['results_dir'] = results_dir
 
             log = get_logger(name=func.__name__, file=study_dir / "aipim.log")
+            
+            bound_args.arguments['log'] = log
            
             func_with_logging = manage_logging(study_dir, log)(func)
             
