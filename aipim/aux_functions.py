@@ -4,6 +4,7 @@ import json
 import numbers
 from pathlib import Path
 import logging
+import shutil
 
 def check_path(path: Path) -> None:
     if not isinstance(path, Path):
@@ -49,11 +50,11 @@ def save_numeric_metadata(locals_dict: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(result, indent=2, ensure_ascii=False))
 
-def get_logger(name: str = "aipim", file: str | Path ="aipim.log") -> logging.Logger:
+def get_logger(name: str = "aipim", file: str | Path ="aipim.log", level: int = logging.INFO) -> logging.Logger:
     if isinstance(file, Path):
         file = str(file.resolve())
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(level)
     if not logger.handlers:
         fh = logging.FileHandler(file)
         formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
@@ -74,7 +75,7 @@ def format_size(bytesize: int) -> str:
 
 def format_execution_time(seconds: float) -> str:
     if seconds < 1e-3:
-        return f"{seconds * 1e6:.2f} µs"
+        return f"{seconds * 1e6:.2f} us"
     elif seconds < 1:
         return f"{seconds * 1e3:.2f} ms"
     elif seconds < 60:
@@ -88,3 +89,18 @@ def format_execution_time(seconds: float) -> str:
         mins = int((seconds % 3600) // 60)
         sec = seconds % 60
         return f"{hrs} h {mins} min {sec:.0f} s"
+
+def is_empty_or_missing(p: Path) -> bool:
+    return not p.exists() or (p.is_dir() and not any(p.iterdir()))
+
+def is_run_dir_empty(run_dir):
+    data_dir = run_dir / 'data'
+    results_dir = run_dir / 'results'
+    
+    return is_empty_or_missing(data_dir) and is_empty_or_missing(results_dir)
+
+def delete_dir(run_dir: Path) -> None:
+    shutil.rmtree(run_dir)
+    
+    
+    

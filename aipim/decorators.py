@@ -1,5 +1,6 @@
 from __future__ import annotations
 from logging import Logger
+import logging
 from pathlib import Path
 from datetime import datetime
 from functools import wraps
@@ -7,7 +8,7 @@ import json
 import numbers
 import inspect
 
-from .aux_functions import check_path, format_size, get_dir_size, get_logger, format_execution_time, save_numeric_metadata
+from .aux_functions import is_run_dir_empty, delete_dir, check_path, format_size, get_dir_size, get_logger, format_execution_time, save_numeric_metadata
 
 
 def manage_logging(study_dir: Path, log: Logger):
@@ -18,7 +19,16 @@ def manage_logging(study_dir: Path, log: Logger):
             
             log.info(f"[aipim] Running '{func.__name__}'...")
             
-            result = func(*args, **kwargs)
+            try:
+                result = func(*args, **kwargs)
+            except Exception as e:
+                final_time = datetime.timestamp(datetime.now())
+                execution_time = format_execution_time(final_time - initial_time)
+                
+                log.error(f"[aipim] Exception while running '{func.__name__}'.")
+                log.error(f"[aipim] {type(e).__name__}: {e}")
+                log.error(f"[aipim] '{func.__name__}' failed to complete after {execution_time}.")
+                raise e
         
             final_time = datetime.timestamp(datetime.now())
             execution_time = format_execution_time(final_time - initial_time)
@@ -33,7 +43,7 @@ def manage_logging(study_dir: Path, log: Logger):
     return decorator
 
 
-def study(base_dir: Path = Path()):
+def study(base_dir: Path = Path(), log_level: int = logging.INFO):
     check_path(base_dir)
     
     def decorator(func):
@@ -65,7 +75,7 @@ def study(base_dir: Path = Path()):
                 results_dir.mkdir(parents=True, exist_ok=True)
                 bound_args.arguments['results_dir'] = results_dir
 
-            log = get_logger(name=func.__name__, file=study_dir / "aipim.log")
+            log = get_logger(name=func.__name__, file=study_dir / "aipim.log", level=log_level)
             
             bound_args.arguments['log'] = log
            
@@ -74,6 +84,10 @@ def study(base_dir: Path = Path()):
             func_locals = func_with_logging(*bound_args.args, **bound_args.kwargs)
             
             save_numeric_metadata(func_locals, run_dir / "metadata.json")
+            
+            if is_run_dir_empty(run_dir):
+                delete_dir(run_dir)
+                log.info('[aipim] Empty run directory cleared.')
             
             return func_locals
         return wrapper
